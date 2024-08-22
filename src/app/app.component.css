@@ -4,7 +4,6 @@
   border-radius:3px;
   margin:4px;
   background-color: aliceblue;
-  
  }
 .form-wrapper{
   display:flex;
@@ -51,4 +50,6 @@ h3{
 td{
   padding:8px 5px;
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -11,16 +11,17 @@ import { ApiData } from './ApiData';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit{  
-  @ViewChild('paginator') paginator:MatPaginator;
+    @ViewChild('paginator') paginator:MatPaginator;
   
     title = 'todoApp';
     showForm:boolean=false;
     ob:number=0;
-    cols:string[]=['userId','id','title','Action1','Action2'];
+    cols:string[]=['userId','id','title','body','Action1','Action2'];
     posts=[];
     puid:number;
     pid:number;
     ptitle:string="";
+    pbody:string="";
     pstid:number;
     formHeader="";
     sorteddt:ApiData[];
@@ -54,6 +55,8 @@ export class AppComponent implements OnInit{
             return compare(a.id, b.id, isAsc);
           case 'pstitle':
             return compare(a.title,b.title,isAsc);
+          case 'psbody':
+            return compare(a.body,b.body,isAsc);
           default:
             return 0;
         }
@@ -66,6 +69,7 @@ export class AppComponent implements OnInit{
       this.puid=data.userId;
       this.pid=data.id;
       this.ptitle=data.title;
+      this.pbody=data.body;
       this.formHeader="Edit Post";
       this.ri=true;
    }
@@ -75,6 +79,7 @@ export class AppComponent implements OnInit{
     this.puid=null;
     this.pid=++this.pstid;
     this.ptitle="";
+    this.pbody="";
     this.ri=false;
    }
   }
@@ -85,7 +90,8 @@ export class AppComponent implements OnInit{
         let updt={
           userId:this.puid,
           id:this.pid,
-          title:this.ptitle
+          title:this.ptitle,
+          body:this.pbody
         };
         this.ap.updateData(updt,uid).subscribe(
           (res)=>{
@@ -94,10 +100,11 @@ export class AppComponent implements OnInit{
                 ele.userId=res.userId;
                 ele.id=res.id;
                 ele.title=res.title;
+                ele.body=res.body;
               }
             }
             this.datasource.data=this.posts;
-            console.log("Data Updated Successfully!",res);
+            console.log("Post Updated Successfully!",res);
           }
         )
       
@@ -105,12 +112,12 @@ export class AppComponent implements OnInit{
     else if(this.formHeader=="Add Post"){
       const fd=this.posts.some(el=>el.id==this.pid && el.userId==this.puid);
       if(!fd){
-          this.postdt={userId:this.puid,id:this.pid,title:this.ptitle};
+          this.postdt={userId:this.puid,id:this.pid,title:this.ptitle,body:this.pbody};
           this.ap.createData(this.postdt).subscribe(
             (res)=>{
               this.posts.push(res);
               this.datasource.data=this.posts;
-              console.log("Data Inserted successfully!",res);
+              console.log("Post Added successfully!",res);
             }
           )
       }
@@ -125,7 +132,7 @@ export class AppComponent implements OnInit{
       (res)=>{
         this.posts=this.posts.filter(it=>it.id!=this.delid);
         this.datasource.data=this.posts;
-        console.log("Data Deleted Successfully!",res);
+        console.log("Post Deleted Successfully!",res);
       }
     )
   }
@@ -137,6 +144,7 @@ export class AppComponent implements OnInit{
     this.puid=null;
     this.pid=null;
     this.ptitle="";
+    this.pbody="";
   } 
 }
 function compare(a: number | string, b: number | string, isAsc: boolean) {

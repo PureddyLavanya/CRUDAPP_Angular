@@ -32,5 +32,4 @@ export class TodoService implements OnInit{
     const myurl=`${dlapi}/${emplid}`;
     return this.http.delete(myurl);
   }
-
 }
