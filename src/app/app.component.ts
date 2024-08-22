@@ -1,133 +1,142 @@
 import { Component,ViewChild,OnInit } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
-import { AfterViewInit } from '@angular/core';
 import {Sort, MatSortModule} from '@angular/material/sort';
 import { HttpClient } from '@angular/common/http';
-
-export interface Emp{
-  id:number,
-  employee_name:string,
-  employee_salary:number,
-  employee_age:number
-}
+import { TodoService } from './todo.service';
+import { ApiData } from './ApiData';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit,AfterViewInit{
+export class AppComponent implements OnInit{  
+  @ViewChild('paginator') paginator:MatPaginator;
+  
     title = 'todoApp';
     showForm:boolean=false;
     ob:number=0;
-    cols:string[]=['id','employee_name','employee_salary','employee_age','Action1','Action2'];
-    empl=[];
-    empid:number=6;
-    eid:number=0;
-    ename:string="";
-    esalary:number=0;
-    eage:number=0;
+    cols:string[]=['userId','id','title','Action1','Action2'];
+    posts=[];
+    puid:number;
+    pid:number;
+    ptitle:string="";
+    pstid:number;
     formHeader="";
-    ri:boolean=false;
-    sortedData:Emp[];
+    sorteddt:ApiData[];
     datasource:any;
-    constructor(private http:HttpClient){
+    dta:any;
+    ri:boolean=false;
+    postdt=new ApiData();
+    delid:number;
+    constructor(private http:HttpClient,private ap:TodoService){
         
     }
     
     ngOnInit(): void {
-      this.http.get<any>("https://dummy.restapiexample.com/api/v1/employees").subscribe(
-        (res)=>{
-          this.empl=res.data;
-        }
-      )
-      this.datasource=new MatTableDataSource(this.empl);
-      this.sortedData = this.empl.slice();
-      this.datasource.paginator=this.paginator;
-      this.datasource.data=this.empl;
-    }   
-    @ViewChild('paginator') paginator:MatPaginator;
+      this.datasource=new MatTableDataSource(this.posts);
+      this.ap.getData().subscribe(res=>{
+        this.posts=res;
+        this.datasource.data=this.posts;
+        this.datasource.paginator=this.paginator;
+        console.log("Data fetched successfully!",this.posts);
+      })
+    }     
     
     sortData(sort: Sort) {
-      const data = this.empl.slice();
-      this.sortedData = data.sort((a, b) => {
+      const data = this.posts.slice();
+      this.sorteddt = data.sort((a, b) => {
         const isAsc = sort.direction === 'asc';
         switch (sort.active) {
-          case 'emid':
+          case 'psuid':
+            return compare(a.userIdid, b.userId, isAsc);
+          case 'psid':
             return compare(a.id, b.id, isAsc);
-          case 'emname':
-            return compare(a.employee_name, b.employee_name, isAsc);
-          case 'emsalary':
-            return compare(a.employee_salary,b.employee_salary,isAsc);
-          case 'emage':
-            return compare(a.employee_age,b.employee_age,isAsc);
+          case 'pstitle':
+            return compare(a.title,b.title,isAsc);
           default:
             return 0;
         }
       });
-      this.datasource.data=this.sortedData;
+      this.datasource.data=this.sorteddt;
     }
     openForm(data:any){
     this.showForm=true;
     if(data){
-      this.eid=data.id;
-      this.ename=data.employee_name;
-      this.esalary=data.employee_salary;
-      this.eage=data.employee_age;
-      this.formHeader="Edit Employee";
+      this.puid=data.userId;
+      this.pid=data.id;
+      this.ptitle=data.title;
+      this.formHeader="Edit Post";
       this.ri=true;
    }
    else{
-    this.formHeader="Add Employee";
-    this.empid=Math.max(...this.empl.map((itm)=>itm.id));
-    this.eid=++this.empid;
-    this.ename="";
-    this.esalary=null;
-    this.eage=null;
+    this.formHeader="Add Post";
+    this.pstid=Math.max(...this.posts.map(it=>it.id));
+    this.puid=null;
+    this.pid=++this.pstid;
+    this.ptitle="";
     this.ri=false;
    }
   }
   saveForm(){
     this.showForm=false;
-    if(this.formHeader=="Edit Employee"){
-      const found=this.empl.some(el=>el.employee_name==this.ename);
-      if(!found){
-        for(let ele of this.empl){
-          if(ele.id==this.eid){
-            ele.employee_name=this.ename;
-            ele.employee_salary=this.esalary;
-            ele.employee_age=this.eage;
+    if(this.formHeader=="Edit Post"){
+        let uid=this.pid;
+        let updt={
+          userId:this.puid,
+          id:this.pid,
+          title:this.ptitle
+        };
+        this.ap.updateData(updt,uid).subscribe(
+          (res)=>{
+            for(let ele of this.posts){
+              if(ele.id==res.id){
+                ele.userId=res.userId;
+                ele.id=res.id;
+                ele.title=res.title;
+              }
+            }
+            this.datasource.data=this.posts;
+            console.log("Data Updated Successfully!",res);
           }
-        }
-      }
-      else{
-        alert("Employee is existed!");
-      }
+        )
+      
     }
-    else if(this.formHeader=="Add Employee"){
-      const fd=this.empl.some(el=>el.employee_name==this.ename);
+    else if(this.formHeader=="Add Post"){
+      const fd=this.posts.some(el=>el.id==this.pid && el.userId==this.puid);
       if(!fd){
-        this.empl.push({id:this.eid,employee_name:this.ename,employee_salary:this.esalary,employee_age:this.eage});
-         this.datasource.data=this.empl;
+          this.postdt={userId:this.puid,id:this.pid,title:this.ptitle};
+          this.ap.createData(this.postdt).subscribe(
+            (res)=>{
+              this.posts.push(res);
+              this.datasource.data=this.posts;
+              console.log("Data Inserted successfully!",res);
+            }
+          )
       }
       else{
-        alert("Employee is existed!")
+        alert("Post is existed!");
       }
     }
   }
   deltodo(ind:any){
-    this.empl = this.empl.filter(item => item.id !== ind.id);
-    this.datasource.data=this.empl;
+    this.delid=ind;
+    this.ap.deleteData(this.delid).subscribe(
+      (res)=>{
+        this.posts=this.posts.filter(it=>it.id!=this.delid);
+        this.datasource.data=this.posts;
+        console.log("Data Deleted Successfully!",res);
+      }
+    )
   }
   closeForm(){
     this.showForm=false;
     this.clearForm();
   }
   clearForm(){
-    this.eid=null;
-    this.ename="";
-    this.esalary=null;
-    this.eage=null;
+    this.puid=null;
+    this.pid=null;
+    this.ptitle="";
   } 
 }
 function compare(a: number | string, b: number | string, isAsc: boolean) {

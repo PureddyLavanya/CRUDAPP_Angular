@@ -11,6 +11,7 @@ import {MatSortModule} from '@angular/material/sort';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import { HttpClientModule } from '@angular/common/http';
 import { StoreModule } from '@ngrx/store';
+import { TodoService } from './todo.service';
 @NgModule({
   declarations: [
     AppComponent
@@ -28,7 +29,7 @@ import { StoreModule } from '@ngrx/store';
     HttpClientModule,
     StoreModule.forRoot({}, {})
   ],
-  providers: [],
+  providers: [TodoService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
